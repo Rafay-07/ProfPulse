@@ -6,6 +6,8 @@ On most rating sites a professor has one score. ProfPulse stores every review ag
 
 Built with Flask, SQLite, and plain HTML, CSS and JavaScript. No front-end framework.
 
+**Live demo:** https://profpulse.onrender.com (free host: the first visit after a quiet spell takes about a minute, and the made-up data resets when it restarts).
+
 ![The professor page](docs/screenshot-professor.png)
 
 ## What works
@@ -68,7 +70,7 @@ Each test builds its own temporary database, so the tests never touch your real 
 
 ## Deploying
 
-`render.yaml` holds the settings for [Render](https://render.com). Add the repository there as a Blueprint and it builds with `pip install -r requirements.txt` and starts with gunicorn. Every push to `main` redeploys.
+`render.yaml` holds the settings for [Render](https://render.com), where the live demo runs. It is set up as a Blueprint from the public repository URL, so a push does not redeploy by itself: use **Manual Deploy** on the service in the Render dashboard, or connect the GitHub account there to deploy on every push.
 
 Three environment variables matter on a host:
 

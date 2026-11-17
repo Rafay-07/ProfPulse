@@ -22,7 +22,7 @@ Built with Flask, SQLite, and plain HTML, CSS and JavaScript. No front-end frame
 | Accounts limited to one school email domain, with a verification link | `profpulse/auth.py` |
 | Review form with server-side checks, one review per course per term | `profpulse/reviews.py` |
 | Reporting: a review is hidden after three different students report it | `profpulse/reviews.py` |
-| 35 automated tests | `tests/` |
+| 36 automated tests | `tests/` |
 
 ## What does not work yet
 

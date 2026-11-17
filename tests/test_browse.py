@@ -95,3 +95,22 @@ def test_security_headers(client):
     headers = client.get("/").headers
     assert "default-src 'self'" in headers["Content-Security-Policy"]
     assert headers["X-Frame-Options"] == "DENY"
+
+
+def test_behind_proxy_uses_the_forwarded_address(tmp_path):
+    """On a host, the rate limits must see each visitor's address, not the proxy's."""
+    from flask import request
+
+    from profpulse import create_app
+
+    app = create_app({"TESTING": True, "SECRET_KEY": "x", "BEHIND_PROXY": True,
+                      "DATABASE": str(tmp_path / "proxy.sqlite")})
+
+    @app.route("/whoami-test")
+    def whoami_test():
+        return request.remote_addr + " " + request.scheme
+
+    reply = app.test_client().get("/whoami-test", headers={
+        "X-Forwarded-For": "203.0.113.5", "X-Forwarded-Proto": "https"})
+    assert reply.get_data(as_text=True) == "203.0.113.5 https"
+    assert app.config["SESSION_COOKIE_SECURE"] is True

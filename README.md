@@ -25,7 +25,7 @@ Built with Flask, SQLite, and plain HTML, CSS and JavaScript. No front-end frame
 ## What does not work yet
 
 - **No real email is sent.** The verification link is written to `instance/outbox.txt` and, in development, shown on the page after sign-up. Connecting a mail service means replacing one function, `_send_verification_email` in `profpulse/auth.py`.
-- **It is not hosted anywhere.** It runs on your own computer.
+- **The demo forgets new reviews.** On the free host the disk is wiped on each restart, so the sample data is rebuilt and anything posted there disappears.
 - **The data is made up.** Every professor, course and review comes from `profpulse/seed.py`. Nothing was copied from another site.
 - **There is no admin page.** Reported reviews are hidden automatically, but nobody can review the reports or add a professor through the site.
 - **The Sprint 0 prototype is not in this repository yet.** See `prototype/README.md`.
@@ -65,6 +65,16 @@ pytest
 ```
 
 Each test builds its own temporary database, so the tests never touch your real one.
+
+## Deploying
+
+`render.yaml` holds the settings for [Render](https://render.com). Add the repository there as a Blueprint and it builds with `pip install -r requirements.txt` and starts with gunicorn. Every push to `main` redeploys.
+
+Three environment variables matter on a host:
+
+- `PROFPULSE_SECRET_KEY`: the key that signs the session cookie. Render generates it.
+- `PROFPULSE_BEHIND_PROXY=1`: trust the host's proxy for the visitor's address and https, so rate limits work per visitor.
+- `PROFPULSE_SHOW_VERIFY_LINK=1`: show the verification link on the page, because no email service is connected yet.
 
 ## How it is put together
 

@@ -45,11 +45,23 @@ def create_app(test_config=None):
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         MAX_CONTENT_LENGTH=64 * 1024,     # no form on this site needs more than 64 KB
+        # Set PROFPULSE_BEHIND_PROXY=1 when a host such as Render sits in front of the app.
+        BEHIND_PROXY=os.environ.get("PROFPULSE_BEHIND_PROXY") == "1",
     )
     if test_config:
         app.config.update(test_config)
     if not app.config.get("SECRET_KEY"):
         app.config["SECRET_KEY"] = _load_secret_key(app)
+
+    if app.config["BEHIND_PROXY"]:
+        # The host's proxy passes the visitor's real address and "https" in
+        # X-Forwarded headers. ProxyFix trusts exactly one proxy, so the rate
+        # limits see each visitor's own address and links are built with https.
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+        # The site is only served over https there, so the cookie can require it.
+        app.config["SESSION_COOKIE_SECURE"] = True
 
     # Database, then the groups of pages (blueprints).
     from . import auth, browse, db, reviews, security

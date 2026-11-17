@@ -1,0 +1,26 @@
+# Deploy settings for Render (render.com). Render reads this file when the
+# repository is added as a Blueprint, and redeploys on every push to main.
+#
+# The free plan sleeps after 15 minutes without visits, so the first visit
+# after that takes about a minute. Its disk is also wiped on each deploy and
+# restart: the app rebuilds the sample data on start, and reviews posted on
+# the demo disappear at the next restart.
+services:
+  - type: web
+    name: profpulse
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # --preload builds the app (and the sample database) once, before the two
+    # workers start, so they never try to create the database at the same time.
+    startCommand: gunicorn run:app --preload --workers 2 --bind 0.0.0.0:$PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: PROFPULSE_SECRET_KEY
+        generateValue: true      # Render makes a random key and keeps it secret
+      - key: PROFPULSE_BEHIND_PROXY
+        value: "1"
+      - key: PROFPULSE_SHOW_VERIFY_LINK
+        value: "1"               # no email service yet, so the demo shows the link

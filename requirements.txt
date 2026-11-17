@@ -2,5 +2,8 @@
 # come with it, and SQLite is part of Python.
 Flask>=3.0,<4
 
+# The production web server used by the host. Not needed to run it locally.
+gunicorn>=22
+
 # For the tests only.
 pytest>=8

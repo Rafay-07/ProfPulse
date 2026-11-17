@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, review_count %}
+{% block title %}Search: ProfPulse{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Search</p>
+  <h1>{% if query %}Results for "{{ query }}"{% elif tag %}Professors tagged "{{ tag }}"{% else %}All professors{% endif %}</h1>
+</section>
+
+{# The filters are a plain GET form, so a filtered page can be bookmarked or shared. #}
+<form class="filters" action="{{ url_for('browse.search') }}">
+  <label>Search
+    <input name="q" type="search" value="{{ query }}" maxlength="80" placeholder="Name or course">
+  </label>
+  <label>Department
+    <select name="dept">
+      <option value="">Any department</option>
+      {% for name in departments %}
+      <option value="{{ name }}"{% if name == department %} selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Tag
+    <select name="tag">
+      <option value="">Any tag</option>
+      {% for name in all_tags %}
+      <option value="{{ name }}"{% if name == tag %} selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button class="btn" type="submit">Apply</button>
+  {% if query or department or tag %}<a class="clear" href="{{ url_for('browse.search') }}">Clear</a>{% endif %}
+</form>
+
+<p class="hint">{{ results|length }} professor{{ '' if results|length == 1 else 's' }} found.</p>
+
+{% if results %}
+<ul class="results">
+  {% for professor in results %}
+  <li>
+    <a href="{{ url_for('browse.professor', professor_id=professor['id'], tag=tag) }}">
+      {{ badge(professor['overall']) }}
+      <span class="result-main">
+        <strong>{{ professor['name'] }}</strong>
+        <span class="meta">{{ professor['department'] }}</span>
+      </span>
+      <span class="result-courses mono">{{ professor['courses']|join(' / ') }}</span>
+      <span class="result-n mono">{{ review_count(professor['n']) }}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty">Nobody matches that. Try a shorter search, or clear the filters.</p>
+{% endif %}
+{% endblock %}

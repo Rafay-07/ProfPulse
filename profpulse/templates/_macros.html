@@ -1,0 +1,30 @@
+{# Small pieces of HTML that several pages share. #}
+
+{# A score out of 5 drawn as a bar. It is an SVG so that no inline style is
+   needed: the fill is simply a rectangle that is (score / 5) of the width. #}
+{% macro bar(value) %}
+<svg class="bar" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true">
+  <rect class="bar-bg" width="100" height="6"/>
+  {% if value is not none %}<rect class="bar-fill" width="{{ (value / 5 * 100)|round(1) }}" height="6"/>{% endif %}
+</svg>
+{% endmacro %}
+
+{# The square badge that shows an overall score. #}
+{% macro badge(value, big=false) %}
+<span class="badge{% if big %} badge-big{% endif %}{% if value is none %} badge-empty{% endif %}">{{ value|score }}</span>
+{% endmacro %}
+
+{# "1 review" or "7 reviews". #}
+{% macro review_count(n) %}{{ n }} review{{ '' if n == 1 else 's' }}{% endmacro %}
+
+{# The label, bar and number for each of the five categories. #}
+{% macro category_rows(row) %}
+<dl class="cats">
+  {% for key, label, question in categories %}
+  <div>
+    <dt>{{ label }}</dt>
+    <dd>{{ bar(row[key]) }}<span class="num">{{ row[key]|score }}</span></dd>
+  </div>
+  {% endfor %}
+</dl>
+{% endmacro %}

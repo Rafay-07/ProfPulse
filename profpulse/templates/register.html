@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sign up: ProfPulse{% endblock %}
+
+{% block content %}
+<section class="page-head narrow">
+  <p class="eyebrow">Sign up</p>
+  <h1>Make an account</h1>
+  <p class="hint">You need a {{ school_name }} email. It is only used to check that you are a student there. It is never shown next to a review.</p>
+</section>
+
+<form class="form narrow" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>School email
+    <input name="email" type="email" required autocomplete="email" value="{{ email }}" placeholder="you@{{ school_domain }}">
+  </label>
+  <label>Password
+    <input name="password" type="password" required minlength="{{ min_chars }}" autocomplete="new-password">
+    <span class="hint">At least {{ min_chars }} characters.</span>
+  </label>
+  <label>Password again
+    <input name="confirm" type="password" required minlength="{{ min_chars }}" autocomplete="new-password">
+  </label>
+  <p class="form-actions">
+    <button class="btn" type="submit">Sign up</button>
+    <a href="{{ url_for('auth.login') }}">I already have an account</a>
+  </p>
+</form>
+{% endblock %}

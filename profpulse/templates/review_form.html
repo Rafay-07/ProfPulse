@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Review {{ person['name'] }}: ProfPulse{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Write a review</p>
+  <h1>{{ person['name'] }}</h1>
+</section>
+
+{# Every rule this form shows is checked again on the server in reviews.py. #}
+<form class="form review-form" method="post" data-max-tags="{{ max_tags }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="form-row">
+    <label>Course
+      <select name="course_id" required>
+        <option value="">Pick a course</option>
+        {% for course in courses %}
+        <option value="{{ course['id'] }}"{% if course['id'] == values['course_id'] %} selected{% endif %}>{{ course['code'] }} {{ course['title'] }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Term you took it
+      <select name="term" required>
+        {% for term in terms %}
+        <option value="{{ term }}"{% if term == values['term'] %} selected{% endif %}>{{ term|term_label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+
+  <h2>Five scores</h2>
+  <p class="hint">1 is the worst, 5 is the best.</p>
+  {# One group of five radio buttons per category. #}
+  {% for key, label, question in categories %}
+  <fieldset class="score-row">
+    <legend><strong>{{ label }}</strong> <span>{{ question }}</span></legend>
+    <div class="score-pick">
+      {% for n in range(1, 6) %}
+      <label><input type="radio" name="{{ key }}" value="{{ n }}" required{% if values['scores'].get(key) == n %} checked{% endif %}><span>{{ n }}</span></label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% endfor %}
+
+  <h2>Tags</h2>
+  <p class="hint">Pick up to {{ max_tags }}. <span class="mono" data-tag-count></span></p>
+  <div class="tag-pick">
+    {% for tag in all_tags %}
+    <label class="chip chip-check"><input type="checkbox" name="tags" value="{{ tag }}"{% if tag in values['tags'] %} checked{% endif %}><span>{{ tag }}</span></label>
+    {% endfor %}
+  </div>
+
+  <h2>Your review</h2>
+  <label class="hide" for="body">Your review</label>
+  <textarea id="body" name="body" rows="7" required minlength="{{ min_chars }}" maxlength="{{ max_chars }}"
+            placeholder="What should someone know before taking this course with this professor?">{{ values['body'] }}</textarea>
+  <p class="hint"><span class="mono" data-char-count data-min="{{ min_chars }}" data-max="{{ max_chars }}">{{ min_chars }} to {{ max_chars }} characters.</span></p>
+
+  <ul class="rules">
+    <li>Your review is shown without your name or email.</li>
+    <li>Write about the teaching and the course. No insults and no private details.</li>
+    <li>One review per course per term.</li>
+  </ul>
+
+  <p class="form-actions">
+    <button class="btn" type="submit">Post review</button>
+    <a href="{{ url_for('browse.professor', professor_id=person['id']) }}">Cancel</a>
+  </p>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/review.js') }}" defer></script>
+{% endblock %}

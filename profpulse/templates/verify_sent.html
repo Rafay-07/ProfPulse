@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Check your email: ProfPulse{% endblock %}
+
+{% block content %}
+<section class="page-head narrow">
+  <p class="eyebrow">One more step</p>
+  <h1>Check your school email</h1>
+  <p>If {% if email %}<strong>{{ email }}</strong>{% else %}that address{% endif %} can be registered, a link has been sent to it. Open the link to verify your account. It works for {{ hours }} hours.</p>
+</section>
+
+<div class="narrow">
+  {# Shown only while SHOW_VERIFY_LINK is on (see profpulse/__init__.py).
+     It stands in for the email until a real mail service is connected. #}
+  {% if dev_link %}
+  <div class="dev-note">
+    <p class="mono">Development mode</p>
+    <p>No real email is sent yet. This is the link the email would contain:</p>
+    <p><a href="{{ dev_link }}">{{ dev_link }}</a></p>
+  </div>
+  {% endif %}
+
+  {% if g.user and not g.user['is_verified'] %}
+  <form method="post" action="{{ url_for('auth.resend') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-line" type="submit">Send a new link</button>
+  </form>
+  {% else %}
+  <p class="hint">Link expired? <a href="{{ url_for('auth.login') }}">Log in</a> and you can ask for a new one.</p>
+  {% endif %}
+</div>
+{% endblock %}

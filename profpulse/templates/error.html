@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ error.code }}: ProfPulse{% endblock %}
+
+{% block content %}
+<section class="page-head narrow">
+  <p class="eyebrow">Error {{ error.code }}</p>
+  <h1>{% if error.code == 404 %}That page does not exist{% else %}{{ error.name }}{% endif %}</h1>
+  <p>{% if error.code == 404 %}The link may be old, or the address may have a typo.{% else %}{{ error.description }}{% endif %}</p>
+  <p><a class="btn" href="{{ url_for('browse.home') }}">Back to the home page</a></p>
+</section>
+{% endblock %}

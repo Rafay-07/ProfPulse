@@ -1,0 +1,15 @@
+# The database, the session key and the stand-in email outbox live here.
+# None of them belong in the repository.
+instance/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db

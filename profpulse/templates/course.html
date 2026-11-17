@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import bar, badge, review_count %}
+{% block title %}{{ course['code'] }}: ProfPulse{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Course</p>
+  <h1><span class="mono">{{ course['code'] }}</span> {{ course['title'] }}</h1>
+</section>
+<p class="hint">Everyone who teaches this course, ranked by their score in this course only.</p>
+
+{# One row per professor: overall badge, name, then the five category scores. #}
+<div class="table-wrap">
+<table class="rank">
+  <thead>
+    <tr>
+      <th scope="col">Overall</th>
+      <th scope="col">Professor</th>
+      {% for key, label, question in categories %}<th scope="col">{{ label }}</th>{% endfor %}
+      <th scope="col">Reviews</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in ranking %}
+    <tr>
+      <td>{{ badge(row['overall']) }}</td>
+      <th scope="row"><a href="{{ url_for('browse.professor', professor_id=row['id'], course=course['code']) }}">{{ row['name'] }}</a></th>
+      {% for key, label, question in categories %}
+      <td>{{ bar(row[key]) }}<span class="num">{{ row[key]|score }}</span></td>
+      {% endfor %}
+      <td class="mono">{{ row['n'] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

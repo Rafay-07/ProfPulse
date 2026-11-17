@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{# "with context" lets the imported macros see page-wide values such as the category list. #}
+{% from "_macros.html" import bar, badge, review_count, category_rows with context %}
+{% block title %}{{ person['name'] }}: ProfPulse{% endblock %}
+
+{# Builds a link to this page with the current filters, changing only what is passed in.
+   A value of none removes that filter from the link. #}
+{% macro here(course_code=(course['code'] if course else none), tag_name=tag, sort_by=sort) -%}
+{{ url_for('browse.professor', professor_id=person['id'], course=course_code, tag=tag_name, sort=(sort_by if sort_by != 'newest' else none)) }}
+{%- endmacro %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">{{ person['department'] }}</p>
+  <h1>{{ person['name'] }}</h1>
+  <a class="btn" href="{{ url_for('reviews.write', professor_id=person['id'], course=(course['code'] if course else none)) }}">Write a review</a>
+</section>
+
+{# Course switch. This is the main idea of the site: the same professor can
+   score differently in different courses. #}
+<nav class="tabs" aria-label="Course">
+  <a href="{{ here(course_code=none) }}"{% if not course %} aria-current="true"{% endif %}>All courses</a>
+  {% for item in courses %}
+  <a href="{{ here(course_code=item['code']) }}"{% if course and course['id'] == item['id'] %} aria-current="true"{% endif %}>
+    <span class="mono">{{ item['code'] }}</span> {{ item['title'] }}
+  </a>
+  {% endfor %}
+</nav>
+
+<div class="prof-grid">
+  <aside class="panel-col">
+    <section class="panel">
+      <h2 class="panel-title">{% if course %}Rating in {{ course['code'] }}{% else %}Rating across all courses{% endif %}</h2>
+      {% if summary['n'] %}
+      <div class="overall">
+        {{ badge(summary['overall'], big=true) }}
+        <p>out of 5<br><span class="meta">{{ review_count(summary['n']) }}</span></p>
+      </div>
+      {{ category_rows(summary) }}
+      {% else %}
+      <p class="empty">No reviews yet{% if course %} for this course{% endif %}.</p>
+      {% endif %}
+    </section>
+
+    {% if chart and chart['points']|length %}
+    <section class="panel">
+      <h2 class="panel-title">Trend by term</h2>
+      {# Drawn on the server from stats.trend_chart(). No chart library. #}
+      <svg class="trend" viewBox="0 0 {{ chart['width'] }} {{ chart['height'] }}" role="img"
+           aria-label="Average overall score per term: {% for p in chart['points'] %}{{ p['term']|term_label }} {{ p['overall']|score }}{{ ', ' if not loop.last }}{% endfor %}">
+        {% for line in chart['gridlines'] %}
+        <line class="grid" x1="{{ chart['left'] }}" x2="{{ chart['right'] }}" y1="{{ line['y'] }}" y2="{{ line['y'] }}"/>
+        <text class="axis" x="{{ chart['left'] - 8 }}" y="{{ line['y'] + 3 }}" text-anchor="end">{{ line['score'] }}</text>
+        {% endfor %}
+        {% if chart['points']|length > 1 %}<polyline class="trend-line" points="{{ chart['line'] }}"/>{% endif %}
+        {% for p in chart['points'] %}
+        <circle class="trend-dot" cx="{{ p['x'] }}" cy="{{ p['y'] }}" r="3.5"><title>{{ p['term']|term_label }}: {{ p['overall']|score }} from {{ review_count(p['n']) }}</title></circle>
+        <text class="axis" x="{{ p['x'] }}" y="{{ chart['label_y'] }}" text-anchor="middle">{{ p['term'] }}</text>
+        {% endfor %}
+      </svg>
+      <p class="hint">Average overall score in each term. Hover a dot for the number.</p>
+    </section>
+    {% endif %}
+
+    {% if tags %}
+    <section class="panel">
+      <h2 class="panel-title">What students tag</h2>
+      {# The tag cloud. A bigger tag was used more often. Clicking one filters the reviews. #}
+      <ul class="cloud">
+        {% for item in tags %}
+        <li><a class="size-{{ item['size'] }}{% if item['name'] == tag %} is-on{% endif %}"
+               href="{{ here(tag_name=(none if item['name'] == tag else item['name'])) }}#reviews"
+               title="{{ item['n'] }} review{{ '' if item['n'] == 1 else 's' }}">{{ item['name'] }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </aside>
+
+  <section id="reviews">
+    <div class="list-head">
+      <h2>{{ review_count(reviews|length) }}{% if tag %} tagged "{{ tag }}"{% endif %}{% if course %} for {{ course['code'] }}{% endif %}</h2>
+      <p class="sorts mono">
+        Sort:
+        {% for value, label in [('newest', 'Newest'), ('highest', 'Highest'), ('lowest', 'Lowest')] %}
+        <a href="{{ here(sort_by=value) }}#reviews"{% if sort == value %} aria-current="true"{% endif %}>{{ label }}</a>
+        {% endfor %}
+      </p>
+    </div>
+    {% if tag %}<p class="active-filter">Showing only reviews tagged "{{ tag }}". <a href="{{ here(tag_name=none) }}#reviews">Show all</a></p>{% endif %}
+
+    {% for review in reviews %}
+    <article class="review">
+      <header>
+        {{ badge(review['overall']) }}
+        <p class="mono meta"><a href="{{ url_for('browse.course', code=review['course_code']) }}">{{ review['course_code'] }}</a> / {{ review['term']|term_label }}</p>
+      </header>
+      <p class="review-body">{{ review['body'] }}</p>
+      <ul class="mini mono">
+        {% for key, label, question in categories %}
+        <li>{{ label }} <strong>{{ review[key] }}</strong></li>
+        {% endfor %}
+      </ul>
+      {% if review['tags'] %}
+      <ul class="chips chips-small">
+        {% for name in review['tags'] %}
+        <li><a class="chip{% if name == tag %} is-on{% endif %}" href="{{ here(tag_name=name) }}#reviews">{{ name }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {# Reporting. The form is tucked inside <details> so it stays out of the way. #}
+      <details class="report">
+        <summary>Report</summary>
+        <form method="post" action="{{ url_for('reviews.report', review_id=review['id']) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="hide" for="reason-{{ review['id'] }}">Reason</label>
+          <select id="reason-{{ review['id'] }}" name="reason" required>
+            <option value="">Why?</option>
+            {% for value, label in report_reasons %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-small btn-line" type="submit">Send report</button>
+        </form>
+      </details>
+    </article>
+    {% else %}
+    <p class="empty">No reviews match. <a href="{{ url_for('reviews.write', professor_id=person['id']) }}">Write the first one.</a></p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}
